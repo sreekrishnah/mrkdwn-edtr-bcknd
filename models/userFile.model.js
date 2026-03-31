@@ -13,6 +13,10 @@ const fileSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  isFavorite: {
+    type: Boolean,
+    default: false,
+  },
   uploadedAt: {
     type: Date,
     default: Date.now,

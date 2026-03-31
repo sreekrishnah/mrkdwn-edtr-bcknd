@@ -38,9 +38,17 @@ export const getFileText = async( req,res ) => {
         return res.status(404).json({ message: "File not found" });
         }
 
+        const targetFile = file.files.find(f => f.driveFileId === fileId);
+        const isFavorite = targetFile ? targetFile.isFavorite : false;
+
         const fileData = await getFile(fileId);
         console.log(fileData);
-        return res.status(200).json({ message: "success", file: fileData.file, fileName: fileData.fileName });
+        return res.status(200).json({ 
+            message: "success", 
+            file: fileData.file, 
+            fileName: fileData.fileName,
+            isFavorite
+        });
     }catch(err){
         console.log("Error getting file data:", err);
         return res.status(500).json({ message: "Internal Server Error", error: err });
@@ -225,6 +233,35 @@ export const DeleteFile = async (req, res) => {
     });
   } catch (err) {
     console.log("Error deleting file", err);
+    return res.status(500).json({ message: "Internal Server Error", error: err });
+  }
+};
+
+export const ToggleFavorite = async (req, res) => {
+  try {
+    const { fileId, isFavorite } = req.body;
+
+    const dbResponse = await UserFileCollection.findOneAndUpdate(
+      { "files.driveFileId": fileId },
+      {
+        $set: {
+          "files.$.isFavorite": isFavorite,
+          "files.$.updatedAt": new Date(),
+        },
+      },
+      { new: true }
+    );
+
+    if (!dbResponse) {
+      return res.status(404).json({ message: "File not found in DB" });
+    }
+
+    return res.status(200).json({
+      message: "Favorite status updated",
+      dbFile: dbResponse,
+    });
+  } catch (err) {
+    console.log("Error toggling favorite", err);
     return res.status(500).json({ message: "Internal Server Error", error: err });
   }
 };
